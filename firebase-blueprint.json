@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Information about an authenticated user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "email"]
+    },
+    "SavedTrip": {
+      "title": "Saved Trip Plan",
+      "description": "A generated or customized travel itinerary saved by user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "destination": { "type": "string" },
+        "durationDays": { "type": "number" },
+        "constraints": { "type": "object" },
+        "itineraryMarkdown": { "type": "string" },
+        "generatedAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "destination", "durationDays"]
+    },
+    "UserReminder": {
+      "title": "Travel Reminder",
+      "description": "A reminder or checklist item for travel",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "isCompleted": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "#/entities/UserProfile",
+      "description": "User profile document"
+    },
+    "/users/{userId}/trips/{tripId}": {
+      "schema": "#/entities/SavedTrip",
+      "description": "User's saved travel plans"
+    },
+    "/users/{userId}/reminders/{reminderId}": {
+      "schema": "#/entities/UserReminder",
+      "description": "User's travel reminders"
+    }
+  }
+}

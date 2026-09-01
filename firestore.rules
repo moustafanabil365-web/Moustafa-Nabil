@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user owns the data
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // User's saved trips subcollection
+      match /trips/{tripId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // User's travel reminders
+      match /reminders/{reminderId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Shared trips public cache (read only for public, authenticated users can publish)
+    match /sharedTrips/{shareId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+  }
+}
