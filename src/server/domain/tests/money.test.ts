@@ -50,10 +50,53 @@ export async function runMoneyTests() {
   const prod = multiplyByInteger(m1, 3);
   assert.strictEqual(prod.amountMinor, 3000);
 
-  // multiply invalid multiplier
+  // multiply invalid multiplier (non-integer)
   let threw = false;
-  try { multiplyByInteger(m1, 1.5 as any); } catch (e) { threw = true; }
+  try { multiplyByInteger(m1, 1.5); } catch (e) { threw = true; }
   assert.strictEqual(threw, true);
+
+  // currency mismatch: operations should throw
+  threw = false;
+  try { add({ amountMinor: 100, currency: 'USD' }, { amountMinor: 100, currency: 'EUR' }); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'add should throw on currency mismatch');
+  threw = false;
+  try { subtract({ amountMinor: 100, currency: 'USD' }, { amountMinor: 100, currency: 'EUR' }); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'subtract should throw on currency mismatch');
+  threw = false;
+  try { compare({ amountMinor: 100, currency: 'USD' }, { amountMinor: 100, currency: 'EUR' }); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'compare should throw on currency mismatch');
+  threw = false;
+  try { equals({ amountMinor: 100, currency: 'USD' }, { amountMinor: 100, currency: 'EUR' }); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'equals should throw on currency mismatch');
+
+  // ensureSafeIntegerOrThrow rejects non-safe integer
+  threw = false;
+  try { ensureSafeIntegerOrThrow(Number.MAX_SAFE_INTEGER + 1, 'unsafe'); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'ensureSafeIntegerOrThrow should throw for unsafe integer');
+
+  // multiply overflow
+  threw = false;
+  const large = Math.floor(Number.MAX_SAFE_INTEGER / 2) + 1;
+  try { multiplyByInteger({ amountMinor: large, currency: USD }, 2); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'multiplyByInteger should throw on overflow');
+
+  // add overflow
+  threw = false;
+  const half = Math.floor(Number.MAX_SAFE_INTEGER / 2) + 1;
+  try { add({ amountMinor: half, currency: USD }, { amountMinor: half, currency: USD }); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'add should throw on overflow');
+
+  // subtract overflow (construct operands that cause overflow)
+  threw = false;
+  const near = Math.floor(Number.MAX_SAFE_INTEGER / 2) + 1;
+  try { subtract({ amountMinor: -near, currency: USD }, { amountMinor: near, currency: USD }); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'subtract should throw on overflow');
+
+  // applyBasisPoints overflow
+  threw = false;
+  const bigA = Math.floor(Number.MAX_SAFE_INTEGER / 200) + 1; // large so that bigA * 200 > MAX_SAFE
+  try { applyBasisPoints({ amountMinor: bigA, currency: USD }, 200); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'applyBasisPoints should throw on overflow');
 
   // divideAndRoundInteger rounding modes and tie cases
   const cases: Array<{ dividend: number; divisor: number; mode: RoundingMode; expected: number }> = [
@@ -68,6 +111,27 @@ export async function runMoneyTests() {
   for (const c of cases) {
     const res = divideAndRoundInteger(c.dividend, c.divisor, c.mode);
     assert.strictEqual(res, c.expected, `divideAndRoundInteger ${c.dividend}/${c.divisor} ${c.mode}`);
+  }
+
+  // additional rounding non-tie cases (5/2 and -5/2)
+  const roundingCases = [
+    { dividend: 5, divisor: 2 },
+    { dividend: -5, divisor: 2 },
+  ];
+  for (const rc of roundingCases) {
+    const halfUp = divideAndRoundInteger(rc.dividend, rc.divisor, 'HALF_UP');
+    const halfAway = divideAndRoundInteger(rc.dividend, rc.divisor, 'HALF_AWAY_FROM_ZERO');
+    const trunc = divideAndRoundInteger(rc.dividend, rc.divisor, 'TRUNCATE');
+    if (rc.dividend === 5) {
+      assert.strictEqual(halfUp, 3);
+      assert.strictEqual(halfAway, 3);
+      assert.strictEqual(trunc, 2);
+    } else {
+      // -5
+      assert.strictEqual(halfUp, -2);
+      assert.strictEqual(halfAway, -3);
+      assert.strictEqual(trunc, -2);
+    }
   }
 
   // divideMoneyAndRound
@@ -94,14 +158,46 @@ export async function runMoneyTests() {
   assert.deepStrictEqual(alloc2.map((m) => m.amountMinor), [17, 33, 50]);
   assert.strictEqual(alloc2.reduce((s, m) => s + m.amountMinor, 0), 100);
 
+  // allocation for 101 with weights [1,2,3]
+  const alloc3 = allocate({ amountMinor: 101, currency: USD }, [1, 2, 3]);
+  // raw floors [16,33,50] sum=99 remainder=2 -> distribution to first two -> [17,34,50]
+  assert.deepStrictEqual(alloc3.map((m) => m.amountMinor), [17, 34, 50]);
+  assert.strictEqual(alloc3.reduce((s, m) => s + m.amountMinor, 0), 101);
+
   // negative allocation
   const allocNeg = allocate({ amountMinor: -100, currency: USD }, [1, 1, 1]);
   assert.deepStrictEqual(allocNeg.map((m) => m.amountMinor), [-34, -33, -33]);
 
-  // invalid allocation weights
+  // subtraction producing negative amount
+  const negSub = subtract({ amountMinor: 100, currency: USD }, { amountMinor: 200, currency: USD });
+  assert.strictEqual(negSub.amountMinor, -100);
+
+  // invalid allocation weights: empty
   threw = false;
   try { allocate({ amountMinor: 100, currency: USD }, []); } catch (e) { threw = true; }
   assert.strictEqual(threw, true);
+
+  // invalid allocation: zero weight
+  threw = false;
+  try { allocate({ amountMinor: 100, currency: USD }, [1, 0, 1]); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true);
+
+  // invalid allocation: negative weight
+  threw = false;
+  try { allocate({ amountMinor: 100, currency: USD }, [1, -2, 1]); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true);
+
+  // invalid allocation: non-integer weight
+  threw = false;
+  try { allocate({ amountMinor: 100, currency: USD }, [1, 1.5, 1]); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true);
+
+  // allocation overflow
+  threw = false;
+  const bigAmount = Math.floor(Number.MAX_SAFE_INTEGER / 2) + 1;
+  try { allocate({ amountMinor: bigAmount, currency: USD }, [2, 2]); } catch (e) { threw = true; }
+  assert.strictEqual(threw, true, 'allocate should throw on multiplication overflow');
+
 
   // divide by zero invalid
   threw = false;

@@ -8,13 +8,13 @@ export async function runPriceBreakdownTests() {
   const USD = 'USD';
   const breakdown: PriceBreakdown = {
     baseAmount: { amountMinor: 5000, currency: USD },
-    taxes: [{ type: 'VAT', amount: { amountMinor: 500, currency: USD } } as TaxLine],
-    fees: [{ type: 'Service', amount: { amountMinor: 200, currency: USD } } as FeeLine],
+    taxes: [{ type: 'VAT', amount: { amountMinor: 500, currency: USD } }],
+    fees: [{ type: 'Service', amount: { amountMinor: 200, currency: USD } }],
     markup: { amountMinor: 100, currency: USD },
     discount: { amountMinor: 0, currency: USD },
     supplierCost: { amountMinor: 4800, currency: USD },
     totalCustomerPrice: { amountMinor: 5800, currency: USD },
-  } as PriceBreakdown;
+  };
 
   // sum components (base + taxes + fees + markup - discount) and compare to totalCustomerPrice
   let sum = zero(USD);

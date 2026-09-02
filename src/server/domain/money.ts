@@ -90,17 +90,19 @@ export function divideAndRoundInteger(dividend: number, divisor: number, mode: R
   const absR = Math.abs(r);
   const D = divisor;
 
-  // compare absR * 2 with D using safe integer logic
-  // check potential overflow for absR * 2 (absR <= MAX_SAFE/2)
-  if (absR > Math.floor(MAX_SAFE / 2)) throw new Error('Integer overflow in rounding comparison');
-  const twiceAbsR = absR * 2;
+  // Safe comparison for 2*absR vs D without performing absR*2 (which could overflow).
+  // Use integer arithmetic: compute thresholds to classify <, >, or tie without unsafe multiplications.
+  // 2*absR < D  <=>  absR <= floor((D-1)/2)
+  // 2*absR > D  <=>  absR > floor(D/2)
+  const lessThreshold = Math.floor((D - 1) / 2); // if absR <= lessThreshold => 2*absR < D
+  const greaterThreshold = Math.floor(D / 2);    // if absR > greaterThreshold => 2*absR > D
 
-  if (twiceAbsR < D) return q; // closer to truncated
-  if (twiceAbsR > D) {
+  if (absR <= lessThreshold) return q; // closer to truncated
+  if (absR > greaterThreshold) {
     // round away from zero
     return dividend >= 0 ? q + 1 : q - 1;
   }
-  // tie case: twiceAbsR === D
+  // tie case: absR is between lessThreshold+1 and greaterThreshold inclusive
   switch (mode) {
     case 'HALF_AWAY_FROM_ZERO':
       return dividend >= 0 ? q + 1 : q - 1;
@@ -147,7 +149,13 @@ export function allocate(a: Money, parts: number[]): Money[] {
   }
 
   ensureSafeIntegerOrThrow(a.amountMinor, 'a.amountMinor');
-  const totalWeight = parts.reduce((s, v) => s + v, 0);
+  // compute totalWeight safely, guarding against overflow
+  let totalWeight = 0;
+  for (const w of parts) {
+    if (!Number.isInteger(w) || w < 0) throw new Error('allocate: invalid weight');
+    if (totalWeight > Math.floor(MAX_SAFE - w)) throw new Error('Integer overflow in allocate totalWeight');
+    totalWeight += w;
+  }
   if (!Number.isInteger(totalWeight) || totalWeight <= 0) throw new Error('allocate: invalid total weight');
 
   const sign = Math.sign(a.amountMinor) || 1;
