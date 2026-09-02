@@ -29,6 +29,8 @@ export enum AvailabilityModel {
 export enum SessionStatus {
   DRAFT = 'DRAFT',
   PENDING_REVALIDATION = 'PENDING_REVALIDATION',
+  PRICE_CHANGED = 'PRICE_CHANGED',
+  AVAILABILITY_CHANGED = 'AVAILABILITY_CHANGED',
   AWAITING_PAYMENT = 'AWAITING_PAYMENT',
   PAYMENT_PENDING = 'PAYMENT_PENDING',
   BOOKING_IN_PROGRESS = 'BOOKING_IN_PROGRESS',
@@ -60,11 +62,17 @@ export enum SupplierCapability {
   REFUND = 'REFUND',
 }
 
+/**
+ * Currency code (ISO 4217) — represented as a plain string to maintain
+ * compatibility across the codebase. Prefer using this alias for semantic
+ * clarity. Do not perform runtime validation in this layer.
+ */
 export type Currency = string; // ISO4217, e.g., 'USD', 'EUR'
 
-// Money uses integer minor units only. No floats.
+// Money uses integer minor units only. No floats. amountMinor MUST be an integer.
 export interface Money {
-  amountMinor: number; // integer in minor units (e.g., cents)
+  /** integer minor units (e.g., cents) — must be an integer value */
+  amountMinor: number;
   currency: Currency;
 }
 
@@ -118,7 +126,9 @@ export interface TravelProduct {
   destination?: Destination;
   location?: string; // free-form address or meeting point
   availabilityModel?: AvailabilityModel;
-  metadata?: Record<string, any>; // type-specific JSON
+  // metadata is intentionally typed as unknown to avoid unsafe any usage while
+  // remaining extensible for type-specific schemas handled by adapters.
+  metadata?: Record<string, unknown>; // type-specific JSON
   metadataVersion?: string;
   version?: number; // optimistic locking version
   createdAt?: string; // ISO timestamp
@@ -138,7 +148,8 @@ export interface Supplier {
   status?: 'ACTIVE' | 'SUSPENDED' | 'MAINTENANCE' | 'TEST';
   // configuration boundary: opaque pointer to credentials stored server-side (never exposed)
   credentialRef?: string;
-  metadata?: Record<string, any>;
+  // supplier metadata is intentionally unknown to avoid unsafe any usage
+  metadata?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -172,6 +183,8 @@ export interface Quote {
     adapterRequestId?: string;
     supplierResponseId?: string;
   };
+  // supplier raw response left opaque for now
+  supplierResponseRaw?: unknown;
 }
 
 export interface TravelerInfo {

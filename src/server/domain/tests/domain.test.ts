@@ -22,6 +22,9 @@ export async function runDomainTests() {
   const m: Money = { amountMinor: 1000, currency: 'USD' };
   assert.strictEqual(m.amountMinor, 1000);
   assert.strictEqual(m.currency, 'USD');
+  // ensure money minor units are integer
+  assert.strictEqual(Number.isInteger(m.amountMinor), true, 'amountMinor must be an integer');
+
 
   // Flight product
   const flight: TravelProduct = {
@@ -114,6 +117,12 @@ export async function runDomainTests() {
     version: 1,
   } as BookingSession;
   assert.strictEqual(session.lines.length, 1);
+
+  // verify SessionStatus enum contains revalidation outcomes
+  // (PRICE_CHANGED and AVAILABILITY_CHANGED)
+  const { SessionStatus } = require('../types') as any;
+  assert.strictEqual(SessionStatus.PRICE_CHANGED, 'PRICE_CHANGED');
+  assert.strictEqual(SessionStatus.AVAILABILITY_CHANGED, 'AVAILABILITY_CHANGED');
 
   // Booking shape
   const booking: Booking = {
