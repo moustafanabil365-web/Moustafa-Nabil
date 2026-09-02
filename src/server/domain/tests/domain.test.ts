@@ -17,6 +17,7 @@ import {
 } from '../types';
 import { runMoneyTests } from './money.test';
 import { runPriceBreakdownTests } from './priceBreakdown.test';
+import { runCoreDomainTests } from './coreDomain.test';
 
 export async function runDomainTests() {
   console.log('domainTests: starting');
@@ -142,4 +143,6 @@ export async function runDomainTests() {
   // run money and price breakdown unit tests
   await runMoneyTests();
   await runPriceBreakdownTests();
+  // run core domain tests (locations, airlines, supplier refs)
+  await runCoreDomainTests();
 }

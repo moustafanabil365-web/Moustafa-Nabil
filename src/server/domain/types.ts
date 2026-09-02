@@ -259,3 +259,67 @@ export interface CancellationPolicy {
   rules: CancellationRule[]; // ordered by precedence
   createdAt?: string;
 }
+
+/**
+ * Core Travel Domain additions (EP1-001)
+ * These types represent canonical, provider-agnostic location and airline concepts.
+ * They are intentionally lightweight and reference existing normalization data by stable ids.
+ */
+
+export interface Country {
+  /** ISO 3166-1 alpha-2 or alpha-3 code (preferred) */
+  code: string;
+  name: string;
+  currency?: Currency; // optional canonical currency for the country
+  region?: string; // e.g., 'Middle East', 'Europe'
+  lat?: number;
+  lon?: number;
+}
+
+export interface City {
+  /** stable id (e.g., iata city code or normalized slug) */
+  id: string;
+  name: string;
+  countryCode: string; // references Country.code
+  region?: string;
+  lat?: number;
+  lon?: number;
+  population?: number;
+}
+
+export interface Airport {
+  airportId: string; // stable id (e.g., 'rua', 'JED')
+  name: string;
+  iata?: string; // IATA 3-letter code
+  icao?: string; // ICAO code
+  cityId?: string; // references City.id
+  countryCode?: string; // references Country.code
+  lat?: number;
+  lon?: number;
+  timezone?: string;
+}
+
+export interface Airline {
+  airlineId: string; // stable canonical id used in normalization datasets (e.g., 'emirates')
+  iata?: string;
+  icao?: string;
+  name?: string;
+  nameEn?: string;
+  country?: string;
+}
+
+export enum SupplierType {
+  AIRLINE = 'AIRLINE',
+  HOTEL = 'HOTEL',
+  TRANSFER = 'TRANSFER',
+  ACTIVITY = 'ACTIVITY',
+  E_SIM = 'E_SIM',
+  OTHER = 'OTHER',
+}
+
+export interface SupplierRef {
+  supplierId: UUID;
+  supplierType?: SupplierType;
+}
+
+// End of EP1-001 core travel domain extensions
