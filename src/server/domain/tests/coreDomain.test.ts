@@ -1,6 +1,6 @@
 import assert from 'assert';
-import { OFFICIAL_AIRLINES_DATABASE } from '../../../src/utils/bookingUtils';
-import { findAirlineByCode } from '../../../src/utils/airlineNormalization';
+import { OFFICIAL_AIRLINES_DATABASE } from '../../../utils/bookingUtils';
+import { findAirlineByCode } from '../../../utils/airlineNormalization';
 import { Country, City, Airport, Airline, SupplierRef, SupplierType } from '../types';
 
 export async function runCoreDomainTests() {
