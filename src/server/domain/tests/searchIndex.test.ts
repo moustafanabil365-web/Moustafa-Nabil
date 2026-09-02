@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { buildAirlineIndexEntries, buildHotelIndexEntries, findAirlineByIataCode } from '../indexers';
-import { TEST_AIRLINES } from '../../../src/utils/airlineTestData';
-import { OFFICIAL_AIRLINES_DATABASE, OFFICIAL_HOTEL_CHAINS_DATABASE } from '../../../src/utils/bookingUtils';
+import { TEST_AIRLINES } from '../../../utils/airlineTestData';
+import { OFFICIAL_AIRLINES_DATABASE, OFFICIAL_HOTEL_CHAINS_DATABASE } from '../../../utils/bookingUtils';
 
 export async function runSearchIndexTests() {
   console.log('searchIndexTests: starting');
