@@ -4,7 +4,6 @@
  */
 import { OFFICIAL_AIRLINES_DATABASE, OfficialHotelChain } from '../../utils/bookingUtils';
 import { getAirlineByIata } from '../../utils/airlineIndex';
-import { normalizeHotelName } from '../../utils/hotelNormalization';
 import { PlaceIndexEntry, PlaceType } from './types';
 
 export function buildAirlineIndexEntries(): PlaceIndexEntry[] {
