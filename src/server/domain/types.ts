@@ -259,3 +259,119 @@ export interface CancellationPolicy {
   rules: CancellationRule[]; // ordered by precedence
   createdAt?: string;
 }
+
+/**
+ * Core Travel Domain additions (EP1-001)
+ * These types represent canonical, provider-agnostic location and airline concepts.
+ * They are intentionally lightweight and reference existing normalization data by stable ids.
+ */
+
+export interface Country {
+  /** ISO 3166-1 alpha-2 or alpha-3 code (preferred) */
+  code: string;
+  name: string;
+  currency?: Currency; // optional canonical currency for the country
+  region?: string; // e.g., 'Middle East', 'Europe'
+  lat?: number;
+  lon?: number;
+}
+
+export interface City {
+  /** stable id (e.g., iata city code or normalized slug) */
+  id: string;
+  name: string;
+  countryCode: string; // references Country.code
+  region?: string;
+  lat?: number;
+  lon?: number;
+  population?: number;
+}
+
+export interface Airport {
+  airportId: string; // stable id (e.g., 'rua', 'JED')
+  name: string;
+  iata?: string; // IATA 3-letter code
+  icao?: string; // ICAO code
+  cityId?: string; // references City.id
+  countryCode?: string; // references Country.code
+  lat?: number;
+  lon?: number;
+  timezone?: string;
+}
+
+export interface Airline {
+  airlineId: string; // stable canonical id used in normalization datasets (e.g., 'emirates')
+  iata?: string;
+  icao?: string;
+  name?: string;
+  nameEn?: string;
+  country?: string;
+}
+
+export enum SupplierType {
+  AIRLINE = 'AIRLINE',
+  HOTEL = 'HOTEL',
+  TRANSFER = 'TRANSFER',
+  ACTIVITY = 'ACTIVITY',
+  E_SIM = 'E_SIM',
+  OTHER = 'OTHER',
+}
+
+export interface SupplierRef {
+  supplierId: UUID;
+  supplierType?: SupplierType;
+}
+
+// End of EP1-001 core travel domain extensions
+
+/**
+ * Destination and Search contracts (EP1/EP2 foundations)
+ */
+export interface Destination {
+  id: string; // canonical id (e.g., 'riyadh-sa' or 'jeddah-sa')
+  name: string;
+  countryCode?: string;
+  cityId?: string;
+  description?: string;
+  lat?: number;
+  lon?: number;
+  placeId?: string; // external place id when available
+  primaryAirportId?: string; // optional reference to Airport.airportId
+}
+
+export enum PlaceType {
+  DESTINATION = 'DESTINATION',
+  CITY = 'CITY',
+  AIRPORT = 'AIRPORT',
+  HOTEL = 'HOTEL',
+  AIRLINE = 'AIRLINE',
+  ATTRACTION = 'ATTRACTION',
+}
+
+export interface PlaceIndexEntry {
+  id: string; // stable id
+  type: PlaceType;
+  title: string;
+  subtitle?: string;
+  countryCode?: string;
+  cityId?: string;
+  iata?: string; // for airports/airlines
+  icao?: string;
+  lat?: number;
+  lon?: number;
+  score?: number; // optional relevance score
+  source?: string; // data source id
+}
+
+export interface SearchQuery {
+  q: string;
+  types?: PlaceType[]; // filter by place types
+  countryCode?: string;
+  cityId?: string;
+  limit?: number;
+}
+
+export interface SearchResult {
+  entries: PlaceIndexEntry[];
+  total: number;
+}
