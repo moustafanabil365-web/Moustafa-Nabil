@@ -323,3 +323,55 @@ export interface SupplierRef {
 }
 
 // End of EP1-001 core travel domain extensions
+
+/**
+ * Destination and Search contracts (EP1/EP2 foundations)
+ */
+export interface Destination {
+  id: string; // canonical id (e.g., 'riyadh-sa' or 'jeddah-sa')
+  name: string;
+  countryCode?: string;
+  cityId?: string;
+  description?: string;
+  lat?: number;
+  lon?: number;
+  placeId?: string; // external place id when available
+  primaryAirportId?: string; // optional reference to Airport.airportId
+}
+
+export enum PlaceType {
+  DESTINATION = 'DESTINATION',
+  CITY = 'CITY',
+  AIRPORT = 'AIRPORT',
+  HOTEL = 'HOTEL',
+  AIRLINE = 'AIRLINE',
+  ATTRACTION = 'ATTRACTION',
+}
+
+export interface PlaceIndexEntry {
+  id: string; // stable id
+  type: PlaceType;
+  title: string;
+  subtitle?: string;
+  countryCode?: string;
+  cityId?: string;
+  iata?: string; // for airports/airlines
+  icao?: string;
+  lat?: number;
+  lon?: number;
+  score?: number; // optional relevance score
+  source?: string; // data source id
+}
+
+export interface SearchQuery {
+  q: string;
+  types?: PlaceType[]; // filter by place types
+  countryCode?: string;
+  cityId?: string;
+  limit?: number;
+}
+
+export interface SearchResult {
+  entries: PlaceIndexEntry[];
+  total: number;
+}
