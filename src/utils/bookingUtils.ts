@@ -50,6 +50,19 @@ export interface OfficialAirline {
   webCheckinUrl: string;
   baggagePolicyUrl: string;
   directBenefits: string[];
+
+  // New optional metadata fields (additive, backward-compatible)
+  serviceLevel?: 'PREMIUM' | 'STANDARD' | 'ECONOMY';
+  businessModel?: 'FULL_SERVICE' | 'HYBRID' | 'LOW_COST' | 'REGIONAL' | 'CHARTER' | 'CARGO' | 'PASSENGER_CARGO';
+  operationType?: 'PASSENGER' | 'CARGO' | 'PASSENGER_CARGO';
+  networkType?: 'DOMESTIC' | 'REGIONAL' | 'INTERNATIONAL' | 'GLOBAL';
+  iataCode?: string;
+  icaoCode?: string;
+  alliance?: string;
+  isActive?: boolean;
+  dataSource?: string;
+  verified?: boolean;
+  confidence?: number;
 }
 
 export interface OfficialHotelChain {
@@ -62,6 +75,38 @@ export interface OfficialHotelChain {
   whatsappAvailable: boolean;
   samplePhone: string;
   directBenefits: string[];
+
+  // New optional hotel metadata (additive)
+  serviceLevel?: 'LUXURY' | 'PREMIUM' | 'STANDARD' | 'BUDGET';
+  propertyType?:
+    | 'HOTEL'
+    | 'RESORT'
+    | 'BOUTIQUE'
+    | 'HOSTEL'
+    | 'APART_HOTEL'
+    | 'VILLA'
+    | 'SERVICED_APARTMENT'
+    | 'LODGE'
+    | 'GUESTHOUSE';
+  starRating?: 1 | 2 | 3 | 4 | 5;
+  hotelSegment?:
+    | 'BUSINESS'
+    | 'LEISURE'
+    | 'FAMILY'
+    | 'COUPLES'
+    | 'LUXURY'
+    | 'WELLNESS'
+    | 'BEACH_RESORT'
+    | 'CITY_CENTER'
+    | 'AIRPORT'
+    | 'LONG_STAY'
+    | 'BUDGET_TRAVEL'
+    | 'ADVENTURE';
+
+  isActive?: boolean;
+  dataSource?: string;
+  verified?: boolean;
+  confidence?: number;
 }
 
 export const OFFICIAL_AIRLINES_DATABASE: OfficialAirline[] = [
