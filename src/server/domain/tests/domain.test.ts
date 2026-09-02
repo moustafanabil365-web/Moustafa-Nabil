@@ -1,5 +1,7 @@
 import assert from 'assert';
-import { v4 as uuidv4 } from 'uuid';
+// Lightweight id generator to avoid new dependencies in EP0-001 tests
+function uuidv4(): string { return 'id-' + Date.now().toString(36) + '-' + Math.floor(Math.random()*1000000).toString(36); }
+
 import {
   ProductType,
   AvailabilityModel,
