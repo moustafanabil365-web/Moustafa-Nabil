@@ -7,6 +7,7 @@ import {
   BadgePercent, AlertCircle, Building2
 } from 'lucide-react';
 import { OFFICIAL_AIRLINES_DATABASE, OFFICIAL_HOTEL_CHAINS_DATABASE, OfficialAirline, OfficialHotelChain } from '../utils/bookingUtils';
+import { getAirlineById, getAirlineByIata, classifyAirlineRecord, OFFICIAL_AIRLINES_ENRICHED } from '../utils/airlineIndex';
 
 export type BookingModalTab = 'flights' | 'hajj_umrah' | 'palestine' | 'hotels' | 'museums' | 'checkout';
 
@@ -151,7 +152,8 @@ export const DirectQuickBookingModal: React.FC<DirectQuickBookingModalProps> = (
   });
   const [flightPassengers, setFlightPassengers] = useState(2);
   const [flightCabin, setFlightCabin] = useState<'economy' | 'business'>('economy');
-  const [selectedAirline, setSelectedAirline] = useState<OfficialAirline>(OFFICIAL_AIRLINES_DATABASE[0]);
+  const [selectedAirline, setSelectedAirline] = useState<OfficialAirline>(getAirlineById(OFFICIAL_AIRLINES_DATABASE[0].id) || OFFICIAL_AIRLINES_DATABASE[0]);
+  const selectedAirlineClassification = classifyAirlineRecord(selectedAirline);
 
   // Hotel Form State
   const [hotelDestination, setHotelDestination] = useState(defaultDestination || 'مكة المكرمة / أبراج الساعة');
@@ -450,7 +452,7 @@ export const DirectQuickBookingModal: React.FC<DirectQuickBookingModalProps> = (
                   <select
                     value={selectedAirline.id}
                     onChange={(e) => {
-                      const found = OFFICIAL_AIRLINES_DATABASE.find((a) => a.id === e.target.value);
+                      const found = getAirlineById(e.target.value) || OFFICIAL_AIRLINES_DATABASE.find((a) => a.id === e.target.value);
                       if (found) setSelectedAirline(found);
                     }}
                     className="w-full bg-[#111a2e] border border-neutral-700 rounded-xl px-3.5 py-2.5 text-sm text-white"
@@ -472,6 +474,11 @@ export const DirectQuickBookingModal: React.FC<DirectQuickBookingModalProps> = (
                     <span className="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">
                       موقع رسمي معتمد
                     </span>
+                    {selectedAirlineClassification && selectedAirlineClassification.verified && selectedAirlineClassification.serviceLevel && (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+                        {selectedAirlineClassification.serviceLevel === 'PREMIUM' ? 'ممتاز' : selectedAirlineClassification.serviceLevel === 'STANDARD' ? 'قياسي' : selectedAirlineClassification.serviceLevel === 'ECONOMY' ? 'اقتصادي' : ''}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-neutral-400">
                     🧳 {selectedAirline.directBenefits[2] || selectedAirline.directBenefits[0]}

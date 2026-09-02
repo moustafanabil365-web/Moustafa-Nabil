@@ -58,6 +58,9 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     direct_hotel_contact: 'تواصل مباشر مع الفندق',
     fast_checkin: 'استلام الغرفة السريع',
     all_ages_friendly: 'واجهة مريحة ومناسبة لجميع الأعمار',
+    service_level_premium: 'ممتاز',
+    service_level_standard: 'قياسي',
+    service_level_economy: 'اقتصادي',
   },
   en: {
     app_title: 'TraviQ Smart Travel',
@@ -94,6 +97,9 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     direct_hotel_contact: 'Direct Hotel Reception Contact',
     fast_checkin: 'Fast Room Check-in',
     all_ages_friendly: 'Eye-Friendly & Age-Accessible Interface',
+    service_level_premium: 'Premium',
+    service_level_standard: 'Standard',
+    service_level_economy: 'Economy',
   },
   fr: {
     app_title: 'TraviQ Smart Travel',
