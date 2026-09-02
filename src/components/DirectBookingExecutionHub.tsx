@@ -16,6 +16,7 @@ import {
   extractActivitiesFromPlan, 
   ActivityBookingItem 
 } from '../utils/bookingUtils';
+import { getAirlineById, getAirlineByIata, classifyAirlineRecord } from '../utils/airlineIndex';
 import { 
   OFFICIAL_GLOBAL_TOUR_PLATFORMS, 
   GLOBAL_TRAVEL_ADDON_SERVICES, 
@@ -56,7 +57,8 @@ export const DirectBookingExecutionHub: React.FC<DirectBookingExecutionHubProps>
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<HubTab>('flights');
-  const [selectedAirline, setSelectedAirline] = useState<OfficialAirline>(OFFICIAL_AIRLINES_DATABASE[0]);
+  const [selectedAirline, setSelectedAirline] = useState<OfficialAirline>(getAirlineById(OFFICIAL_AIRLINES_DATABASE[0].id) || OFFICIAL_AIRLINES_DATABASE[0]);
+  const selectedAirlineClassification = classifyAirlineRecord(selectedAirline);
   const [selectedHotel, setSelectedHotel] = useState<OfficialHotelChain>(OFFICIAL_HOTEL_CHAINS_DATABASE[0]);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
@@ -718,11 +720,13 @@ export const DirectBookingExecutionHub: React.FC<DirectBookingExecutionHubProps>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {OFFICIAL_AIRLINES_DATABASE.map((airline) => {
+                const enrichedAirline = getAirlineById(airline.id) || airline;
+                const airlineClass = classifyAirlineRecord(enrichedAirline);
                 const isSelected = selectedAirline.id === airline.id;
                 return (
                   <div
                     key={airline.id}
-                    onClick={() => setSelectedAirline(airline)}
+                    onClick={() => setSelectedAirline(getAirlineById(airline.id) || airline)}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
                       isSelected
                         ? 'bg-[#15233d] border-sky-400 shadow-lg shadow-sky-500/20'
@@ -735,6 +739,11 @@ export const DirectBookingExecutionHub: React.FC<DirectBookingExecutionHubProps>
                         <div>
                           <h4 className="text-xs sm:text-sm font-black text-white">{airline.name}</h4>
                           <span className="text-[10px] text-neutral-400 block">{airline.nameEn} • {airline.country}</span>
+                          {airlineClass && airlineClass.verified && airlineClass.serviceLevel && (
+                            <span className="text-[10px] inline-block mt-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+                              {airlineClass.serviceLevel === 'PREMIUM' ? 'ممتاز' : airlineClass.serviceLevel === 'STANDARD' ? 'قياسي' : airlineClass.serviceLevel === 'ECONOMY' ? 'اقتصادي' : ''}
+                            </span>
+                            )}
                         </div>
                       </div>
                       {isSelected && (
@@ -759,7 +768,7 @@ export const DirectBookingExecutionHub: React.FC<DirectBookingExecutionHubProps>
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedAirline(airline);
+                          setSelectedAirline(getAirlineById(airline.id) || airline);
                           handleInitiateDirectBooking(
                             airline.name,
                             airline.logo,
@@ -801,6 +810,11 @@ export const DirectBookingExecutionHub: React.FC<DirectBookingExecutionHubProps>
                     <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold">
                       بوابة الحجز المباشرة الرسمية
                     </span>
+                    {selectedAirlineClassification && selectedAirlineClassification.verified && selectedAirlineClassification.serviceLevel && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold">
+                        {selectedAirlineClassification.serviceLevel === 'PREMIUM' ? 'ممتاز' : selectedAirlineClassification.serviceLevel === 'STANDARD' ? 'قياسي' : selectedAirlineClassification.serviceLevel === 'ECONOMY' ? 'اقتصادي' : ''}
+                      </span>
+                    )}
                   </h3>
                   <p className="text-xs text-neutral-300 mt-0.5">
                     الرابط المباشر للبحث وحجز الرحلات إلى {plan.destination} وتأكيد التذاكر الإلكترونية الأصلية
