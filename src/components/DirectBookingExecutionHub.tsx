@@ -743,7 +743,7 @@ export const DirectBookingExecutionHub: React.FC<DirectBookingExecutionHubProps>
                             <span className="text-[10px] inline-block mt-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
                               {airlineClass.serviceLevel === 'PREMIUM' ? 'ممتاز' : airlineClass.serviceLevel === 'STANDARD' ? 'قياسي' : airlineClass.serviceLevel === 'ECONOMY' ? 'اقتصادي' : ''}
                             </span>
-                          )
+                            )}
                         </div>
                       </div>
                       {isSelected && (
