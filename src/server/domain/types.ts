@@ -242,7 +242,7 @@ export interface Booking {
   lines?: SessionLine[]; // snapshot of booked lines
   priceSnapshot?: PriceBreakdown;
   customerContact?: { email?: string; phone?: string };
-  supplierResponseRaw?: any; // for reconciliation
+  supplierResponseRaw?: unknown; // for reconciliation
   version?: number;
 }
 
