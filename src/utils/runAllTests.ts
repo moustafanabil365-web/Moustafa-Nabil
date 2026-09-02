@@ -1,5 +1,6 @@
 import { runAirlineTests } from './airlineTests';
 import { runHotelTests } from './hotelTests';
+import { runDomainTests } from '../server/domain/tests/domain.test';
 
 async function main() {
   try {
@@ -10,6 +11,10 @@ async function main() {
     console.log('Running hotel tests...');
     await runHotelTests();
     console.log('Hotel tests passed.');
+
+    console.log('Running domain tests...');
+    await runDomainTests();
+    console.log('Domain tests passed.');
 
     console.log('\nALL TESTS PASSED');
     process.exit(0);
