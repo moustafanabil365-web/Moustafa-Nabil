@@ -15,6 +15,8 @@ import {
   Supplier,
   SessionStatus,
 } from '../types';
+import { runMoneyTests } from './money.test';
+import { runPriceBreakdownTests } from './priceBreakdown.test';
 
 export async function runDomainTests() {
   console.log('domainTests: starting');
@@ -136,4 +138,8 @@ export async function runDomainTests() {
   assert.strictEqual(booking.status, 'CONFIRMED');
 
   console.log('domainTests: completed');
+
+  // run money and price breakdown unit tests
+  await runMoneyTests();
+  await runPriceBreakdownTests();
 }
