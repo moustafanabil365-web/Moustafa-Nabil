@@ -13,6 +13,7 @@ import {
   Booking,
   SupplierCapability,
   Supplier,
+  SessionStatus,
 } from '../types';
 
 export async function runDomainTests() {
@@ -120,7 +121,6 @@ export async function runDomainTests() {
 
   // verify SessionStatus enum contains revalidation outcomes
   // (PRICE_CHANGED and AVAILABILITY_CHANGED)
-  const { SessionStatus } = require('../types') as any;
   assert.strictEqual(SessionStatus.PRICE_CHANGED, 'PRICE_CHANGED');
   assert.strictEqual(SessionStatus.AVAILABILITY_CHANGED, 'AVAILABILITY_CHANGED');
 
