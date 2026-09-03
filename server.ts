@@ -397,34 +397,50 @@ function getFallbackExperiences(destination: string): any[] {
   ];
 }
 
-const SYSTEM_INSTRUCTION = `You are "SmartTravel AI" (سافر بذكاء), an elite AI Travel Concierge and Decision-Support System.
-Your objective is to generate highly personalized travel itineraries, discover authentic non-touristy local experiences, handle multi-city transit logistics, and provide real-time decision support and contingency plans based on strict user constraints.
+const getSystemInstruction = (language: string = "ar") => {
+  const langCode = (language || "ar").toLowerCase();
+  const langDescriptions: Record<string, string> = {
+    ar: "Arabic (العربية الفصحى المعاصرة بأسلوب ملكي وودي راقٍ)",
+    en: "English (Professional, engaging, premium travel English)",
+    fr: "French (Français élégant, fluide et soigné pour le voyage)",
+    es: "Spanish (Español fluido, profesional y cercano)",
+    de: "German (Deutsch, klar, strukturiert und professionell)",
+    tr: "Turkish (Türkçe, akıcı, samimi ve profesyonel)",
+    zh: "Simplified Chinese (简体中文，地道流畅，专业旅游指南风格)",
+    ru: "Russian (Русский язык, качественный и вежливый туристический стиль)",
+    ja: "Japanese (日本語、丁寧で自然なトラベルガイド表現)",
+  };
 
-When given travel constraints, format your output in clean Markdown with EXACTLY 4 main sections:
+  const targetLang = langDescriptions[langCode] || langDescriptions.ar;
 
-1. 🗓️ **جدول الرحلة الذكي (Day-by-Day Itinerary)**:
-   - Provide a realistic schedule with timeslots (Morning / الصباح, Afternoon / بعد الظهر, Evening / المساء) for each day.
+  return `You are "SmartTravel AI" (TraviQ), an elite Royal AI Travel Concierge and Decision-Support System.
+Your objective is to generate highly personalized travel itineraries, discover authentic non-touristy local experiences, handle multi-city transit logistics, and provide real-time decision support based on strict user constraints.
+
+CRITICAL LANGUAGE DIRECTIVE:
+You MUST respond and generate all content, titles, recommendations, advice, tables, and itineraries strictly in: **${targetLang}**.
+
+When given travel constraints, format your output in clean Markdown with EXACTLY 4 main sections (localized into the target language):
+
+1. 🗓️ **Day-by-Day Itinerary (جدول الرحلة الذكي)**:
+   - Provide a realistic schedule with timeslots (Morning, Afternoon, Evening) for each day.
    - For multi-city trips: clearly group days by city, specify inter-city transit times, recommended transit modes (High-speed train, domestic flight, scenic drive), luggage logistics, and optimal routes.
-   - Integrate 2-3 unique, non-touristy local experiences (e.g. authentic neighborhood eateries, master artisan workshops, secret historical alley walks) into specific day schedules with booking tips.
+   - Integrate 2-3 unique, non-touristy local experiences into specific day schedules with booking tips.
 
-2. 💡 **لماذا اخترنا هذه الأماكن؟ (Decision Rationale)**:
+2. 💡 **Decision Rationale (لماذا اخترنا هذه الأماكن؟)**:
    - Give concise bullet points explaining WHY these spots and routes fit the user's constraints (group dynamics, kid-friendliness, budget match, geographic proximity, travel pace, and transit efficiency).
-   - Dedicated Rationale for Local Experiences: Explicitly explain the cultural and authentic value of the suggested non-touristy gems and why they surpass standard tourist traps.
+   - Dedicated Rationale for Local Experiences: Explicitly explain the cultural and authentic value of suggested non-touristy gems.
 
-3. 💰 **تحليل وتوزيع الميزانية (Smart Budget Allocation)**:
-   - Show estimated % breakdown for:
-     * Accommodation / الإقامة
-     * Food & Dining / الطعام والمطاعم
-     * Activities & Experiences / الفعاليات والتجارب المحلية
-     * Transport & Inter-city Transit / المواصلات والتنقل بين المدن
-     * Emergency Reserve / الطوارئ والاحتياط
-   - Factor in the costs of recommended local experiences and inter-city transit.
-   - If constraints or budget seem unrealistic for the destination and duration, add a prominent ⚠️ **[Budget Warning / تنبيه الميزانية]** explaining the gap and actionable mitigation steps.
+3. 💰 **Smart Budget Allocation (تحليل وتوزيع الميزانية)**:
+   - Show estimated % breakdown for Accommodation, Food & Dining, Activities & Local Gems, Transport & Inter-city Transit, and Emergency Reserve.
+   - If constraints or budget seem unrealistic, add a prominent ⚠️ **[Budget Warning]** with actionable mitigation steps.
 
-4. 🧳 **قائمة الأغراض الذكية (Smart Packing Checklist)**:
-   - A tailored checklist factoring in trip duration, destination climate, culture, transit between cities, and planned authentic activities.
+4. 🧳 **Smart Packing Checklist (قائمة الأغراض الذكية)**:
+   - A tailored checklist factoring in trip duration, destination climate, culture, transit, and planned activities.
 
-Maintain an encouraging, highly professional, and structured Saudi Arabic / Egyptian Arabic friendly context according to user preference or context. Use clear headings, emojis, bullet points, and tables where appropriate.`;
+Maintain an encouraging, highly professional, and structured tone. Use clear headings, emojis, bullet points, and tables where appropriate.`;
+};
+
+const SYSTEM_INSTRUCTION = getSystemInstruction("ar");
 
 // Health check
 app.get("/api/health", (_req, res) => {
@@ -960,7 +976,7 @@ app.post("/api/nearby-places-gps", async (req, res) => {
 
 // Real-time SSE Streaming Concierge Endpoint for 0-latency live typing
 app.post("/api/ask-concierge-stream", async (req, res) => {
-  const { question, currentItinerary, context } = req.body;
+  const { question, currentItinerary, context, language = "ar" } = req.body;
 
   if (!question) {
     return res.status(400).json({ error: "Question is required" });
@@ -972,18 +988,33 @@ app.post("/api/ask-concierge-stream", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
+  const langNames: Record<string, string> = {
+    ar: "Arabic (العربية)",
+    en: "English",
+    fr: "French (Français)",
+    es: "Spanish (Español)",
+    de: "German (Deutsch)",
+    tr: "Turkish (Türkçe)",
+    zh: "Simplified Chinese (简体中文)",
+    ru: "Russian (Русский)",
+    ja: "Japanese (日本語)",
+  };
+  const targetLanguageName = langNames[language] || "Arabic";
+
   const prompt = `
-أنت "SmartTravel AI" (المستشار الملكي الذكي للسفر).
-سياق الرحلة الحالية:
-${context ? JSON.stringify(context, null, 2) : "رحلة سياحية"}
+You are "SmartTravel AI" (TraviQ), the Royal AI Travel Concierge.
+Current Trip Context:
+${context ? JSON.stringify(context, null, 2) : "General Travel Consultation"}
 
-الخطة الحالية للمسافر:
-${currentItinerary ? currentItinerary.slice(0, 2000) : "لا توجد خطة سابقة"}
+Current User Itinerary:
+${currentItinerary ? currentItinerary.slice(0, 3000) : "No prior itinerary provided"}
 
-سؤال المسافر:
+User Question / Query:
 "${question}"
 
-أجب باحترافية وسرعة، مع تقديم نصائح عملية وبدائل دقيقة بصيغة Markdown منسقة.
+LANGUAGE DIRECTIVE:
+You MUST respond clearly and completely in **${targetLanguageName}**.
+Provide practical, actionable advice, alternatives, and tips formatted in clean Markdown with emojis and bold highlights.
 `;
 
   try {
@@ -992,7 +1023,7 @@ ${currentItinerary ? currentItinerary.slice(0, 2000) : "لا توجد خطة س�
       model: "gemini-3.1-flash-lite",
       contents: prompt,
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
+        systemInstruction: getSystemInstruction(language),
         temperature: 0.6,
       },
     });
@@ -1007,10 +1038,27 @@ ${currentItinerary ? currentItinerary.slice(0, 2000) : "لا توجد خطة س�
     res.end();
   } catch (err: any) {
     console.warn("Streaming encountered issue, falling back to instant response:", err?.message || err);
-    const fallbackText = `أهلاً بك! بخصوص استفسارك حول **"${question}"**:
+    let fallbackText = `أهلاً بك! بخصوص استفسارك حول **"${question}"**:
 - 💡 **التوصية الأنسب**: يُفضل بدء هذا النشاط في الصباح الباكر للاستمتاع بأجواء مريحة وتجنب طوابير الانتظار.
 - 🚗 **المواصلات**: التنقل السريع عبر تطبيقات التوصيل أو المترو هو الخيار الأوفر وقتاً وجهداً.
 - 💰 **الميزانية**: ننصح بالحجز الإلكتروني المسبق لتأكيد الدخول والاستفادة من العروض المخفضة.`;
+
+    if (language === "en") {
+      fallbackText = `Welcome! Regarding your inquiry about **"${question}"**:
+- 💡 **Best Recommendation**: We recommend scheduling this activity early in the morning to avoid queues and enjoy a pleasant atmosphere.
+- 🚗 **Transportation**: High-speed transit, local metro, or ride-hailing apps offer the fastest and most cost-effective travel.
+- 💰 **Budget & Booking**: We advise booking directly via official portals in advance for guaranteed entry and best available rates.`;
+    } else if (language === "fr") {
+      fallbackText = `Bienvenue ! Concernant votre demande sur **"${question}"** :
+- 💡 **Recommandation optimale** : Il est conseillé de planifier cette activité tôt le matin pour éviter l'affluence.
+- 🚗 **Transport** : Le métro ou les VTC officiels constituent la solution la plus rapide et économique.
+- 💰 **Réservation** : Privilégiez la réservation directe sur les sites officiels à l'avance.`;
+    } else if (language === "es") {
+      fallbackText = `¡Bienvenido! Respecto a tu consulta sobre **"${question}"**:
+- 💡 **Recomendación principal**: Se recomienda programar esta actividad temprano en la mañana para evitar colas.
+- 🚗 **Transporte**: El metro y las aplicaciones oficiales de transporte son la opción más rápida y económica.
+- 💰 **Reserva**: Es aconsejable reservar directamente a través de canales oficiales con anticipación.`;
+    }
 
     res.write(`data: ${JSON.stringify({ text: fallbackText })}\n\n`);
     res.write("data: [DONE]\n\n");
@@ -2264,6 +2312,11 @@ app.post("/api/translate-itinerary", async (req, res) => {
       en: "English (Natural, clear travel terminology)",
       fr: "French (Français élégant et adapté au voyage)",
       es: "Spanish (Español fluido para turismo y viajes)",
+      de: "German (Deutsch, präzise und flüssige Reisesprache)",
+      tr: "Turkish (Türkçe, akıcı ve profesyonel seyahat dili)",
+      zh: "Simplified Chinese (简体中文，地道流畅的旅游用语)",
+      ru: "Russian (Русский язык, качественный туристический стиль)",
+      ja: "Japanese (日本語、丁寧で自然な旅行ガイド表現)",
       ar: "Modern Standard Arabic (العربية الفصحى المعاصرة)",
     };
 
@@ -2313,6 +2366,36 @@ ${itineraryMarkdown}
           `## Resumen del Plan de Viaje\n` +
           `- **Destino**: ${destination || "Destino Elegido"}\n` +
           `- **Puntos Destacados**: Plan diario equilibrado que combina cultura, gastronomía local y descanso.`;
+      } else if (targetLanguage === "de") {
+        translatedMarkdown = `# Reiseplan: ${destination || "Ihre Reise"}\n\n` +
+          `*Ins Deutsche übersetzt von SmartTravel AI Concierge*\n\n` +
+          `## Übersicht & Detaillierter Reiseverlauf\n` +
+          `- **Reiseziel**: ${destination || "Ausgewähltes Ziel"}\n` +
+          `- **Highlights**: Perfekt abgestimmter Tagesablauf mit kulturellen Entdeckungen und lokaler Gastronomie.`;
+      } else if (targetLanguage === "tr") {
+        translatedMarkdown = `# Seyahat Programı: ${destination || "Seyahatiniz"}\n\n` +
+          `*SmartTravel AI Concierge tarafından Türkçe'ye çevrildi*\n\n` +
+          `## Genel Bakış ve Günlük Program\n` +
+          `- **Destinasyon**: ${destination || "Seçilen Şehir"}\n` +
+          `- **Önemli Noktalar**: Kültürel keşifler ve yerel lezzetlerle dengelenmiş seyahat planı.`;
+      } else if (targetLanguage === "zh") {
+        translatedMarkdown = `# 旅行行程方案: ${destination || "您的行程"}\n\n` +
+          `*由 SmartTravel AI Concierge 翻译为中文*\n\n` +
+          `## 行程总览与详细安排\n` +
+          `- **目的地**: ${destination || "所选目的地"}\n` +
+          `- **核心亮点**: 包含文化探索、特色美食与合理交通规划的每日完整行程。`;
+      } else if (targetLanguage === "ru") {
+        translatedMarkdown = `# Маршрут путешествия: ${destination || "Ваша поездка"}\n\n` +
+          `*Переведено на русский язык с помощью SmartTravel AI Concierge*\n\n` +
+          `## Обзор и ежедневная программа\n` +
+          `- **Направление**: ${destination || "Выбранный город"}\n` +
+          `- **Основные моменты**: Сбалансированный маршрут с осмотром достопримечательностей и местной кухней.`;
+      } else if (targetLanguage === "ja") {
+        translatedMarkdown = `# 旅行日程プラン: ${destination || "あなたの旅"}\n\n` +
+          `*SmartTravel AI Concierge による日本語翻訳*\n\n` +
+          `## 旅程の概要と日別スケジュール\n` +
+          `- **目的地**: ${destination || "選択した都市"}\n` +
+          `- **ハイライト**: 文化探訪、郷土料理、最適な移動ルートを組み合わせた安心のプラン。`;
       } else {
         translatedMarkdown = itineraryMarkdown;
       }

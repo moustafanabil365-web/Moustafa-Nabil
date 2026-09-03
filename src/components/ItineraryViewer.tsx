@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Markdown from 'react-markdown';
 import { 
   Calendar, Lightbulb, Wallet, Luggage, Copy, Check, 
@@ -9,6 +9,7 @@ import {
   Award, Leaf, Image as ImageIcon, Zap, Mountain, Globe
 } from 'lucide-react';
 import { GeneratedPlan, LocalExperience, RestaurantItem, WeatherData, ActivityNote, DayVisualLandmark } from '../types';
+import { SupportedLanguage, SUPPORTED_LANGUAGES, getTranslation } from '../utils/i18n';
 import { LocalExperiencesCard } from './LocalExperiencesCard';
 import { RealTimeAlertsBanner } from './RealTimeAlertsBanner';
 import { InteractiveTripMap } from './InteractiveTripMap';
@@ -42,6 +43,8 @@ import { PharaonicCartouche, WingedSunSymbol } from './PharaonicDecorations';
 
 interface ItineraryViewerProps {
   plan: GeneratedPlan;
+  currentLanguage?: SupportedLanguage;
+  onLanguageChange?: (lang: SupportedLanguage) => void;
   onRegenerate: () => void;
   onOpenChat: (initialMessage?: string) => void;
   onOpenReminders?: () => void;
@@ -51,6 +54,8 @@ interface ItineraryViewerProps {
 
 export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
   plan,
+  currentLanguage: propLanguage = 'ar',
+  onLanguageChange,
   onRegenerate,
   onOpenChat,
   onOpenReminders,
@@ -71,8 +76,8 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
   const [selectedNoteActivity, setSelectedNoteActivity] = useState<string>('');
   const [selectedBookingActivity, setSelectedBookingActivity] = useState<string>('');
 
-  // Multi-Language Translation State (Arabic, English, French, Spanish)
-  const [currentLanguage, setCurrentLanguage] = useState<'ar' | 'en' | 'fr' | 'es'>('ar');
+  // Multi-Language Translation State
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(propLanguage);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
 
@@ -82,8 +87,13 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
       ? plan.itineraryMarkdown
       : plan.translatedItineraries?.[currentLanguage] || plan.itineraryMarkdown;
 
-  const handleLanguageChange = async (targetLang: 'ar' | 'en' | 'fr' | 'es') => {
+  const handleLanguageChange = async (targetLang: SupportedLanguage) => {
     if (targetLang === currentLanguage) return;
+    
+    if (onLanguageChange) {
+      onLanguageChange(targetLang);
+    }
+
     if (targetLang === 'ar') {
       setCurrentLanguage('ar');
       return;
@@ -131,11 +141,24 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
       setCurrentLanguage(targetLang);
     } catch (err) {
       console.error('Translation error:', err);
-      setTranslationError('تعذر الترجمة حالياً، تم الإبقاء على النص الأصلي.');
+      setTranslationError(currentLanguage === 'ar' ? 'تعذر الترجمة حالياً، تم الإبقاء على النص الأصلي.' : 'Translation unavailable, showing original content.');
     } finally {
       setIsTranslating(false);
     }
   };
+
+  // Sync propLanguage changes from Navbar/App
+  useEffect(() => {
+    if (propLanguage && propLanguage !== currentLanguage) {
+      if (propLanguage === 'ar') {
+        setCurrentLanguage('ar');
+      } else if (plan.translatedItineraries?.[propLanguage]) {
+        setCurrentLanguage(propLanguage);
+      } else {
+        handleLanguageChange(propLanguage);
+      }
+    }
+  }, [propLanguage]);
 
   const handleSaveFeedback = (feedback: any) => {
     const updatedPlan: GeneratedPlan = {
@@ -342,13 +365,15 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             )}
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-            <span>خطة السفر الذكية المخصصة</span>
+            <span>{getTranslation(currentLanguage, 'plan_custom_title')}</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#d4af37]/20 text-[#f5d061] border border-[#d4af37]/40 font-bold hidden sm:inline-block">
-              العرش الملكي 👑
+              {getTranslation(currentLanguage, 'royal_throne_badge')}
             </span>
           </h2>
           <p className="text-xs text-[#9eb3cf] mt-1">
-            مجهزة بمعرض الصور عالي الدقة، الاستجابة الفورية، تحويل العملات اللحظي، وتصدير الـ PDF.
+            {currentLanguage === 'ar' 
+              ? 'مجهزة بمعرض الصور عالي الدقة، الاستجابة الفورية، تحويل العملات اللحظي، وتصدير الـ PDF.'
+              : 'Equipped with HD photo gallery, instant AI responsiveness, live currency converter, and PDF export.'}
           </p>
         </div>
 
@@ -359,10 +384,10 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             id="collaborator-notes-btn"
             onClick={() => setIsCollaboratorsOpen(true)}
             className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl bg-[#1c1c1c] hover:bg-[#282828] text-[#d4af37] border border-[#d4af37]/40 hover:border-[#d4af37] transition-all cursor-pointer relative"
-            title="ملاحظات ونقاشات رفقاء السفر"
+            title={getTranslation(currentLanguage, 'btn_collaborators')}
           >
             <Users className="w-4 h-4 text-[#d4af37]" />
-            <span>رفقاء السفر</span>
+            <span>{getTranslation(currentLanguage, 'btn_collaborators')}</span>
             {collaboratorCommentsCount > 0 && (
               <span className="bg-[#d4af37] text-black text-[10px] font-black px-1.5 py-0.2 rounded-full mr-0.5">
                 {collaboratorCommentsCount}
@@ -376,10 +401,10 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
               id="open-reminders-action-btn"
               onClick={onOpenReminders}
               className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl bg-[#1c1c1c] hover:bg-[#282828] text-amber-300 border border-amber-500/40 hover:border-[#d4af37] transition-all cursor-pointer"
-              title="مهام وتذكيرات السفر العامة"
+              title={getTranslation(currentLanguage, 'nav_reminders')}
             >
               <ListTodo className="w-4 h-4 text-[#d4af37]" />
-              <span>مهام وتذكيرات</span>
+              <span>{getTranslation(currentLanguage, 'nav_reminders')}</span>
             </button>
           )}
 
@@ -388,10 +413,10 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             id="export-pdf-modal-btn"
             onClick={() => setIsPdfModalOpen(true)}
             className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl bg-[#d4af37] hover:bg-[#e5c158] text-black shadow-lg shadow-[#d4af37]/20 transition-all cursor-pointer"
-            title="تصدير خطة الرحلة كملف PDF أنيق"
+            title={getTranslation(currentLanguage, 'btn_export_pdf')}
           >
             <FileDown className="w-4 h-4" />
-            <span>تصدير PDF</span>
+            <span>{getTranslation(currentLanguage, 'btn_export_pdf')}</span>
           </button>
 
           {/* Trip Highlight Card Generator Button */}
@@ -399,10 +424,10 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             id="highlight-card-btn"
             onClick={() => setIsHighlightCardModalOpen(true)}
             className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl bg-[#221a08] hover:bg-[#2e230b] text-[#d4af37] border border-[#d4af37]/60 hover:border-[#d4af37] transition-all cursor-pointer shadow-md shadow-[#d4af37]/10"
-            title="إنشاء بطاقة الرحلة التذكارية للمشاركة على إنستغرام وإكس"
+            title={getTranslation(currentLanguage, 'btn_highlight_card')}
           >
             <ImageIcon className="w-4 h-4 text-[#d4af37]" />
-            <span>بطاقة الهايلايت 📸</span>
+            <span>{getTranslation(currentLanguage, 'btn_highlight_card')}</span>
           </button>
 
           {/* Share Trip Link Button */}
@@ -410,10 +435,10 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             id="share-trip-btn"
             onClick={() => setIsShareModalOpen(true)}
             className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#282828] text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer"
-            title="مشاركة رابط الرحلة المباشر"
+            title={getTranslation(currentLanguage, 'share_trip')}
           >
             <Share2 className="w-4 h-4 text-emerald-400" />
-            <span>مشاركة الرحلة</span>
+            <span>{getTranslation(currentLanguage, 'share_trip')}</span>
           </button>
 
           {/* Booking & Personal Notes Button */}
@@ -421,10 +446,10 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             id="activity-notes-btn"
             onClick={() => setIsNotesModalOpen(true)}
             className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#282828] text-amber-300 border border-amber-500/40 hover:border-[#d4af37] transition-all cursor-pointer relative"
-            title="إضافة وتعديل أرقام الحجوزات والملاحظات الشخصية"
+            title={getTranslation(currentLanguage, 'btn_notes_booking')}
           >
             <Ticket className="w-4 h-4 text-[#d4af37]" />
-            <span>ملاحظات وحجوزات</span>
+            <span>{getTranslation(currentLanguage, 'btn_notes_booking')}</span>
             {hasActivityNotes && (
               <span className="w-2 h-2 rounded-full bg-[#d4af37] absolute top-1.5 left-1.5 animate-pulse"></span>
             )}
@@ -442,10 +467,10 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
                 ? 'bg-amber-400/20 text-[#d4af37] border-[#d4af37]'
                 : 'bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border-neutral-800 hover:border-[#d4af37]/40'
             }`}
-            title="تعديل الملاحظات أو الأوقات وحفظها محلياً"
+            title={getTranslation(currentLanguage, 'btn_edit_itinerary')}
           >
             <Edit3 className="w-4 h-4 text-[#d4af37]" />
-            <span>تحرير الجدول</span>
+            <span>{getTranslation(currentLanguage, 'btn_edit_itinerary')}</span>
           </button>
 
           {/* Ask AI Assistant */}
@@ -455,14 +480,14 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl bg-[#1f1f1f] hover:bg-[#2a2a2a] text-neutral-100 border border-neutral-700 transition-all cursor-pointer"
           >
             <MessageCircle className="w-4 h-4 text-[#d4af37]" />
-            <span>اسأل المستشار</span>
+            <span>{getTranslation(currentLanguage, 'btn_ask_concierge')}</span>
           </button>
 
           <button
             id="copy-markdown-btn"
             onClick={handleCopy}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
-            title="نسخ نص الماركداون"
+            title="Copy / نسخ"
           >
             {copied ? <Check className="w-4 h-4 text-[#d4af37]" /> : <Copy className="w-4 h-4 text-neutral-400" />}
           </button>
@@ -471,7 +496,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             id="regenerate-plan-btn"
             onClick={onRegenerate}
             className="flex items-center gap-1 text-xs font-medium px-3 py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
-            title="توليد بديل"
+            title="Regenerate / إعادة توليد"
           >
             <RefreshCw className="w-4 h-4 text-neutral-400" />
           </button>
@@ -483,7 +508,9 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
         <div className="bg-[#141414] border border-neutral-800 rounded-2xl p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-3">
             <Layers className="w-4 h-4 text-[#d4af37]" />
-            <span className="text-xs sm:text-sm font-bold text-white">تسلسل محطات المسار والتنقل بين المدن:</span>
+            <span className="text-xs sm:text-sm font-bold text-white">
+              {currentLanguage === 'ar' ? 'تسلسل محطات المسار والتنقل بين المدن:' : 'Multi-City Route Sequence & Transit:'}
+            </span>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
             {cityStops.map((stop, idx) => (
@@ -494,7 +521,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
                       {idx + 1}
                     </span>
                     <span className="text-[10px] text-neutral-400 font-bold bg-[#141414] px-1.5 py-0.5 rounded">
-                      {stop.days} أيام
+                      {stop.days} {getTranslation(currentLanguage, 'days_unit')}
                     </span>
                   </div>
                   <div className="text-sm font-bold text-white">{stop.cityName}</div>
@@ -505,7 +532,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
                 {idx < cityStops.length - 1 && (
                   <div className="flex flex-col items-center justify-center px-1 text-neutral-500 flex-shrink-0">
                     <Train className="w-4 h-4 text-[#d4af37]" />
-                    <span className="text-[10px] text-neutral-400 mt-0.5 font-mono">⟵ انتقال</span>
+                    <span className="text-[10px] text-neutral-400 mt-0.5 font-mono">⟵ {currentLanguage === 'ar' ? 'انتقال' : 'Transit'}</span>
                   </div>
                 )}
               </React.Fragment>
@@ -545,74 +572,43 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold text-white">ترجمة الخطة الفورية (Gemini Multilingual)</span>
+              <span className="text-xs sm:text-sm font-bold text-white">
+                {getTranslation(currentLanguage, 'instant_translation_title')}
+              </span>
               {isTranslating && (
                 <span className="text-[10px] text-amber-300 font-mono animate-pulse flex items-center gap-1">
                   <RefreshCw className="w-3 h-3 animate-spin" />
-                  جاري الترجمة بالذكاء الاصطناعي...
+                  {getTranslation(currentLanguage, 'translating_in_progress')}
                 </span>
               )}
             </div>
             <p className="text-[11px] text-neutral-400">
-              ترجمة متزامنة للمسار، المبررات، والتفاصيل مع الحفاظ على التنسيق.
+              {getTranslation(currentLanguage, 'instant_translation_desc')}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <button
-            onClick={() => handleLanguageChange('ar')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              currentLanguage === 'ar'
-                ? 'bg-[#d4af37] text-black shadow'
-                : 'bg-[#1c1c1c] text-neutral-300 hover:text-white border border-neutral-700 hover:border-[#d4af37]/50'
-            }`}
-          >
-            <span>🇸🇦</span>
-            <span>العربية (الأصلية)</span>
-          </button>
-
-          <button
-            onClick={() => handleLanguageChange('en')}
-            disabled={isTranslating}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              currentLanguage === 'en'
-                ? 'bg-[#d4af37] text-black shadow'
-                : 'bg-[#1c1c1c] text-neutral-300 hover:text-white border border-neutral-700 hover:border-[#d4af37]/50'
-            } ${isTranslating ? 'opacity-50 cursor-wait' : ''}`}
-          >
-            <span>🇬🇧</span>
-            <span>English</span>
-            {plan.translatedItineraries?.['en'] && <Check className="w-3 h-3 text-emerald-400" />}
-          </button>
-
-          <button
-            onClick={() => handleLanguageChange('fr')}
-            disabled={isTranslating}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              currentLanguage === 'fr'
-                ? 'bg-[#d4af37] text-black shadow'
-                : 'bg-[#1c1c1c] text-neutral-300 hover:text-white border border-neutral-700 hover:border-[#d4af37]/50'
-            } ${isTranslating ? 'opacity-50 cursor-wait' : ''}`}
-          >
-            <span>🇫🇷</span>
-            <span>Français</span>
-            {plan.translatedItineraries?.['fr'] && <Check className="w-3 h-3 text-emerald-400" />}
-          </button>
-
-          <button
-            onClick={() => handleLanguageChange('es')}
-            disabled={isTranslating}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              currentLanguage === 'es'
-                ? 'bg-[#d4af37] text-black shadow'
-                : 'bg-[#1c1c1c] text-neutral-300 hover:text-white border border-neutral-700 hover:border-[#d4af37]/50'
-            } ${isTranslating ? 'opacity-50 cursor-wait' : ''}`}
-          >
-            <span>🇪🇸</span>
-            <span>Español</span>
-            {plan.translatedItineraries?.['es'] && <Check className="w-3 h-3 text-emerald-400" />}
-          </button>
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => handleLanguageChange(lang.code)}
+              disabled={isTranslating}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                currentLanguage === lang.code
+                  ? 'bg-[#d4af37] text-black shadow font-black'
+                  : 'bg-[#1c1c1c] text-neutral-300 hover:text-white border border-neutral-700 hover:border-[#d4af37]/50'
+              } ${isTranslating ? 'opacity-50 cursor-wait' : ''}`}
+            >
+              <span>{lang.flag}</span>
+              <span>{lang.nativeName}</span>
+              {lang.code === 'ar' ? (
+                <span className="text-[10px] text-neutral-500 font-normal">({currentLanguage === 'ar' ? 'الأصلية' : 'Orig'})</span>
+              ) : plan.translatedItineraries?.[lang.code] ? (
+                <Check className="w-3 h-3 text-emerald-400" />
+              ) : null}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -646,7 +642,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Sparkles className="w-4 h-4" />
-          <span>التقرير الشامل المتكامل</span>
+          <span>{getTranslation(currentLanguage, 'tab_all')}</span>
         </button>
 
         <button
@@ -658,7 +654,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Zap className="w-4 h-4 text-emerald-400" />
-          <span>✈️ مركز الحجز والتنفيذ المباشر (طيران • فنادق • سداد)</span>
+          <span>✈️ {getTranslation(currentLanguage, 'tab_direct_hub')}</span>
         </button>
 
         <button
@@ -670,7 +666,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Calendar className="w-4 h-4 text-[#d4af37]" />
-          <span>⏱️ الخط الزمني التفاعلي (Day Timeline)</span>
+          <span>⏱️ {getTranslation(currentLanguage, 'tab_timeline')}</span>
         </button>
 
         <button
@@ -682,7 +678,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Camera className="w-4 h-4 text-[#d4af37]" />
-          <span>📸 معرض الصور الملكي والاستكشاف البصري</span>
+          <span>📸 {getTranslation(currentLanguage, 'tab_gallery')}</span>
         </button>
 
         <button
@@ -694,7 +690,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Sparkles className="w-4 h-4 text-[#d4af37]" />
-          <span>✨ ستوديو الذكاء الاصطناعي (موسيقى • فيديو • صور • تفريغ صوتي • خرائط حية)</span>
+          <span>✨ {currentLanguage === 'ar' ? 'ستوديو الذكاء الاصطناعي (موسيقى • صور • فيديو)' : 'AI Media Studio'}</span>
         </button>
 
         <button
@@ -706,7 +702,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Zap className="w-4 h-4 text-amber-400" />
-          <span>⚡ مساعد الحجز السريع (Deep Links)</span>
+          <span>⚡ {currentLanguage === 'ar' ? 'مساعد الحجز السريع' : 'Deep Links Booking'}</span>
         </button>
 
         <button
@@ -718,7 +714,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Mountain className="w-4 h-4 text-emerald-400" />
-          <span>🌐 خريطة التضاريس 3D (Elevation)</span>
+          <span>🌐 {getTranslation(currentLanguage, 'tab_map3d')}</span>
         </button>
 
         <button
@@ -730,7 +726,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Lightbulb className="w-4 h-4 text-yellow-400" />
-          <span>💡 التلميحات الذكية (Smart Tips)</span>
+          <span>💡 {getTranslation(currentLanguage, 'tab_smarttips')}</span>
         </button>
 
         <button
@@ -742,7 +738,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Award className="w-4 h-4" />
-          <span>🏆 تقييم تجربة الرحلة (AI Score)</span>
+          <span>🏆 {getTranslation(currentLanguage, 'tab_evaluator')}</span>
         </button>
 
         <button
@@ -754,7 +750,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Wallet className="w-4 h-4" />
-          <span>💳 متتبع المصاريف اللحظي</span>
+          <span>💳 {getTranslation(currentLanguage, 'tab_expenses')}</span>
         </button>
 
         <button
@@ -766,7 +762,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Luggage className="w-4 h-4" />
-          <span>🧳 قوالب الأمتعة والطقس</span>
+          <span>🧳 {getTranslation(currentLanguage, 'tab_packing')}</span>
         </button>
 
         <button
@@ -778,7 +774,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Leaf className="w-4 h-4" />
-          <span>🌿 الأثر البيئي والاستدامة</span>
+          <span>🌿 {getTranslation(currentLanguage, 'tab_eco')}</span>
         </button>
 
         <button
@@ -790,7 +786,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Camera className="w-4 h-4" />
-          <span>📸 معرض المعالم (Scenic AI)</span>
+          <span>📸 {getTranslation(currentLanguage, 'tab_visuals')}</span>
         </button>
 
         <button
@@ -802,7 +798,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <MapIcon className="w-4 h-4" />
-          <span>🗺️ الخريطة التفاعلية</span>
+          <span>🗺️ {getTranslation(currentLanguage, 'tab_map')}</span>
         </button>
 
         <button
@@ -814,7 +810,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Calendar className="w-4 h-4" />
-          <span>🗓️ جدول الأيام والأنشطة</span>
+          <span>🗓️ {getTranslation(currentLanguage, 'tab_itinerary')}</span>
         </button>
 
         <button
@@ -826,7 +822,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Coins className="w-4 h-4" />
-          <span>💰 الميزانية وتحويل العملات</span>
+          <span>💰 {getTranslation(currentLanguage, 'tab_budget')}</span>
         </button>
 
         <button
@@ -838,7 +834,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Utensils className="w-4 h-4" />
-          <span>🍽️ البحث عن مطاعم</span>
+          <span>🍽️ {getTranslation(currentLanguage, 'tab_restaurants')}</span>
         </button>
 
         <button
@@ -850,7 +846,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <ShieldAlert className="w-4 h-4" />
-          <span>🛡️ استخبارات وتنبيهات السفر</span>
+          <span>🛡️ {getTranslation(currentLanguage, 'tab_alerts')}</span>
         </button>
 
         <button
@@ -862,7 +858,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <CloudSun className="w-4 h-4" />
-          <span>⛅ الطقس وتوصيات الملابس</span>
+          <span>⛅ {getTranslation(currentLanguage, 'tab_weather')}</span>
         </button>
 
         {plan.localExperiences && plan.localExperiences.length > 0 && (
@@ -875,7 +871,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
             }`}
           >
             <Gem className="w-4 h-4" />
-            <span>💎 تجارب محلية أصيلة</span>
+            <span>💎 {getTranslation(currentLanguage, 'tab_experiences')}</span>
           </button>
         )}
 
@@ -888,7 +884,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Edit3 className="w-4 h-4" />
-          <span>✏️ تحرير الجدول</span>
+          <span>✏️ {getTranslation(currentLanguage, 'tab_editor')}</span>
         </button>
 
         <button
@@ -900,7 +896,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <Lightbulb className="w-4 h-4" />
-          <span>💡 أسباب الاختيار</span>
+          <span>💡 {getTranslation(currentLanguage, 'tab_rationale')}</span>
         </button>
 
         <button
@@ -912,7 +908,7 @@ export const ItineraryViewer: React.FC<ItineraryViewerProps> = ({
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>نص Markdown</span>
+          <span>Markdown</span>
         </button>
       </div>
 

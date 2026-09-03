@@ -6,6 +6,7 @@ import {
   FileCheck, Luggage, Landmark, CreditCard, HeartPulse
 } from 'lucide-react';
 import { TravelReminder, ReminderCategory, ReminderPriority } from '../types';
+import { SupportedLanguage } from '../utils/i18n';
 
 interface TravelRemindersDrawerProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface TravelRemindersDrawerProps {
   tripDestination?: string;
   tripId?: string;
   onRemindersChange?: (reminders: TravelReminder[]) => void;
+  currentLanguage?: SupportedLanguage;
 }
 
 const STORAGE_KEY = 'smarttravel_user_reminders_v1';

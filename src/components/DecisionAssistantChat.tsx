@@ -4,12 +4,14 @@ import {
   Send, Bot, User, X, Sparkles, Compass, ShieldCheck, Zap
 } from 'lucide-react';
 import { ChatMessage, GeneratedPlan } from '../types';
+import { SupportedLanguage } from '../utils/i18n';
 
 interface DecisionAssistantChatProps {
   isOpen: boolean;
   onClose: () => void;
   plan: GeneratedPlan | null;
   initialMessage?: string;
+  currentLanguage?: SupportedLanguage;
 }
 
 const PHARAONIC_QUICK_SUGGESTIONS = [

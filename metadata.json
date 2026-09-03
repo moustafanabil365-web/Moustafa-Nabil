@@ -1,6 +1,6 @@
 {
-  "name": "Remix SmartTravel AI | سافر بذكاء",
-  "description": "Elite AI Travel Concierge and Decision-Support System providing day-by-day itineraries, decision rationales, smart budget allocation, and packing checklists.",
+  "name": "TraviQ Smart Travel",
+  "description": "منظومة TraviQ Smart Travel الذكية لتخطيط الرحلات الفاخرة، خدمات العمرة والحج الرسمية، مسارات القدس وفلسطين، والحجز والتنفيذ المباشر من المواقع الرسمية بأقل سعر.",
   "requestFramePermissions": [
     "microphone",
     "geolocation"

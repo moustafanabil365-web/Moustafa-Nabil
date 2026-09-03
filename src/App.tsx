@@ -12,11 +12,11 @@ import { AlertCircle, RefreshCw, X } from 'lucide-react';
 import { cachePlanForOffline, registerServiceWorker, getOfflinePlanById } from './utils/offlineStorage';
 import { auth, saveTripToCloud, deleteTripFromCloud, fetchUserTripsFromCloud } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { SupportedLanguage, SUPPORTED_LANGUAGES } from './utils/i18n';
+import { SupportedLanguage, SUPPORTED_LANGUAGES, getTranslation } from './utils/i18n';
+import { GlobalOfficialProvidersHub } from './components/GlobalOfficialProvidersHub';
 import { DirectBookingExecutionHub } from './components/DirectBookingExecutionHub';
 import { HajjUmrahServicesHub } from './components/HajjUmrahServicesHub';
 import { PalestineJerusalemHub } from './components/PalestineJerusalemHub';
-import { GlobalOfficialProvidersHub } from './components/GlobalOfficialProvidersHub';
 import { ExtraTravelServicesHub } from './components/ExtraTravelServicesHub';
 
 const STORAGE_KEY = 'smarttravel_saved_plans_v1';
@@ -36,10 +36,10 @@ export default function App() {
   const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>(undefined);
   const [isSavedDrawerOpen, setIsSavedDrawerOpen] = useState(false);
   const [isRemindersDrawerOpen, setIsRemindersDrawerOpen] = useState(false);
+  const [isOfficialProvidersModalOpen, setIsOfficialProvidersModalOpen] = useState(false);
   const [isDirectBookingModalOpen, setIsDirectBookingModalOpen] = useState(false);
   const [isHajjUmrahModalOpen, setIsHajjUmrahModalOpen] = useState(false);
   const [isPalestineModalOpen, setIsPalestineModalOpen] = useState(false);
-  const [isOfficialProvidersModalOpen, setIsOfficialProvidersModalOpen] = useState(false);
   const [isExtraServicesModalOpen, setIsExtraServicesModalOpen] = useState(false);
   const [remindersCount, setRemindersCount] = useState(0);
 
@@ -62,6 +62,13 @@ export default function App() {
       console.warn(e);
     }
   }, []);
+
+  // Update HTML element direction and lang attribute whenever language changes
+  useEffect(() => {
+    const langMeta = SUPPORTED_LANGUAGES.find((l) => l.code === currentLanguage) || SUPPORTED_LANGUAGES[0];
+    document.documentElement.lang = currentLanguage;
+    document.documentElement.dir = langMeta.direction;
+  }, [currentLanguage]);
 
   const handleLanguageChange = (lang: SupportedLanguage) => {
     setCurrentLanguage(lang);
@@ -315,11 +322,10 @@ export default function App() {
         onNewTrip={() => setActivePlan(null)}
         onOpenSaved={() => setIsSavedDrawerOpen(true)}
         onOpenReminders={() => setIsRemindersDrawerOpen(true)}
-        onOpenChat={() => handleOpenChatWithMessage()}
+        onOpenOfficialProviders={() => setIsOfficialProvidersModalOpen(true)}
         onOpenDirectBooking={() => setIsDirectBookingModalOpen(true)}
         onOpenHajjUmrah={() => setIsHajjUmrahModalOpen(true)}
         onOpenPalestine={() => setIsPalestineModalOpen(true)}
-        onOpenOfficialProviders={() => setIsOfficialProvidersModalOpen(true)}
         onOpenExtraServices={() => setIsExtraServicesModalOpen(true)}
         savedCount={savedPlans.length}
         remindersPendingCount={remindersCount}
@@ -339,14 +345,14 @@ export default function App() {
           <div className="max-w-4xl mx-auto mb-6 p-4 rounded-xl bg-rose-950/30 border border-rose-500/40 text-rose-300 text-sm flex items-start gap-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400 mt-0.5" />
             <div className="flex-1">
-              <span className="font-bold block mb-0.5">حدث خطأ</span>
+              <span className="font-bold block mb-0.5">{currentLanguage === 'ar' ? 'حدث خطأ' : 'An error occurred'}</span>
               <p className="text-xs sm:text-sm text-rose-200/90">{error}</p>
             </div>
             <button
               onClick={() => setError(null)}
               className="text-xs text-rose-400 hover:underline cursor-pointer"
             >
-              إغلاق
+              {getTranslation(currentLanguage, 'close')}
             </button>
           </div>
         )}
@@ -355,6 +361,8 @@ export default function App() {
         {activePlan ? (
           <ItineraryViewer
             plan={activePlan}
+            currentLanguage={currentLanguage}
+            onLanguageChange={handleLanguageChange}
             onRegenerate={() => handleGeneratePlan(activePlan.constraints)}
             onOpenChat={handleOpenChatWithMessage}
             onOpenReminders={() => setIsRemindersDrawerOpen(true)}
@@ -366,11 +374,12 @@ export default function App() {
             onSubmit={handleGeneratePlan} 
             isLoading={isLoading} 
             onOpenOfficialProviders={() => setIsOfficialProvidersModalOpen(true)}
+            currentLanguage={currentLanguage}
           />
         )}
       </main>
 
-      {/* Direct Booking Execution Modal (from Navbar) */}
+      {/* Direct Booking Execution Modal */}
       {isDirectBookingModalOpen && activePlan && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
           <div className="max-w-5xl w-full my-auto animate-in zoom-in-95 duration-200 relative">
@@ -445,6 +454,7 @@ export default function App() {
         }}
         plan={activePlan}
         initialMessage={chatInitialMessage}
+        currentLanguage={currentLanguage}
       />
 
       {/* Saved Trips Drawer */}
@@ -454,6 +464,7 @@ export default function App() {
         savedPlans={savedPlans}
         onSelectPlan={(plan) => setActivePlan(plan)}
         onDeletePlan={handleDeletePlan}
+        currentLanguage={currentLanguage}
       />
 
       {/* Persistent Floating Chat Bot Trigger Badge on Screen */}
@@ -461,6 +472,7 @@ export default function App() {
         onOpenChat={handleOpenChatWithMessage}
         plan={activePlan}
         isOpen={isChatOpen}
+        currentLanguage={currentLanguage}
       />
 
       {/* General Travel Reminders & Tasks Drawer */}
@@ -472,15 +484,10 @@ export default function App() {
         onRemindersChange={(rems) => {
           setRemindersCount(rems.filter((r) => !r.isCompleted).length);
         }}
+        currentLanguage={currentLanguage}
       />
 
-      {/* Global Official Providers Directory Modal */}
-      <GlobalOfficialProvidersHub
-        isOpen={isOfficialProvidersModalOpen}
-        onClose={() => setIsOfficialProvidersModalOpen(false)}
-      />
-
-      {/* Extra Travel Services Hub Modal (eSIM, Travel Insurance, Private Transfers, Lounges) */}
+      {/* Extra Travel Services Hub Modal */}
       <ExtraTravelServicesHub
         isOpen={isExtraServicesModalOpen}
         onClose={() => setIsExtraServicesModalOpen(false)}
@@ -488,16 +495,23 @@ export default function App() {
         currentLanguage={currentLanguage}
       />
 
+      {/* Global Official Providers Directory Modal */}
+      <GlobalOfficialProvidersHub
+        isOpen={isOfficialProvidersModalOpen}
+        onClose={() => setIsOfficialProvidersModalOpen(false)}
+        currentLanguage={currentLanguage}
+      />
+
       {/* Luxury Footer */}
       <footer className="border-t border-neutral-800/80 bg-[#0a0a0a] py-6 text-xs text-neutral-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-neutral-400 italic font-semibold">
-            "رحلة سعيدة مع TraviQ Smart Travel — نخطط لتعيش أبهى تجربة وبأقل تكلفة رسمية"
+            {getTranslation(currentLanguage, 'footer_quote')}
           </p>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[#d4af37] animate-pulse"></div>
             <span className="text-[11px] text-neutral-400 uppercase tracking-wide">
-              TraviQ Smart Travel | حجز مباشر بدون وسيط • 9D Engine v3.0
+              {getTranslation(currentLanguage, 'footer_tagline')}
             </span>
           </div>
         </div>

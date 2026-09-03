@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Trash2, Calendar, MapPin, ArrowRight, Luggage, Clock } from 'lucide-react';
 import { GeneratedPlan } from '../types';
+import { SupportedLanguage, getTranslation } from '../utils/i18n';
 
 interface SavedTripsDrawerProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface SavedTripsDrawerProps {
   savedPlans: GeneratedPlan[];
   onSelectPlan: (plan: GeneratedPlan) => void;
   onDeletePlan: (id: string) => void;
+  currentLanguage?: SupportedLanguage;
 }
 
 export const SavedTripsDrawer: React.FC<SavedTripsDrawerProps> = ({
@@ -16,6 +18,7 @@ export const SavedTripsDrawer: React.FC<SavedTripsDrawerProps> = ({
   savedPlans,
   onSelectPlan,
   onDeletePlan,
+  currentLanguage = 'ar',
 }) => {
   if (!isOpen) return null;
 
